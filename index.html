@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>自家菜地 - 新鲜蔬菜采摘</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --green:#38a169;--green-dark:#2f855a;--green-light:#c6f6d5;--green-bg:#f0fff4;
+  --red:#e53e3e;--orange:#dd6b20;--yellow-bg:#fffbeb;--yellow-border:#fefcbf;
+  --bg:#f0f4f2;--card:#fff;--text:#1a202c;--gray:#718096;--border:#e2e8f0;
+  --radius:16px;--shadow:0 4px 20px rgba(0,0,0,0.08);
+}
+html,body{height:100%;background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  color:var(--text);font-size:16px;max-width:480px;margin:0 auto;padding-bottom:80px;
+  -webkit-font-smoothing:antialiased}
+
+/* Header */
+.header{background:linear-gradient(135deg,#38a169,#276749);color:#fff;
+  padding:28px 20px 22px;text-align:center}
+.header-title{font-size:22px;font-weight:700;letter-spacing:1px}
+.header-sub{font-size:13px;opacity:.8;margin-top:5px}
+
+/* Stats */
+.stats-bar{background:#fff;display:flex;align-items:center;justify-content:center;
+  gap:6px;padding:11px 20px;font-size:14px;color:var(--green-dark);
+  border-bottom:1px solid var(--border)}
+.stats-num{font-size:22px;font-weight:700;color:var(--red)}
+
+/* Banners */
+.banner{padding:10px 16px;font-size:14px;display:flex;align-items:center;gap:8px;line-height:1.5}
+.banner.harvest{background:var(--green-bg);color:var(--green-dark);border-bottom:1px solid var(--green-light)}
+.banner.notice{background:var(--yellow-bg);color:var(--orange);border-bottom:1px solid var(--yellow-border)}
+.banner.closed{background:#fff5f5;color:var(--red);border-bottom:1px solid #fed7d7}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* Products */
+.products{padding:16px;display:flex;flex-direction:column;gap:14px}
+.product-card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.product-img{width:100%;height:190px;object-fit:cover;display:block}
+.product-img-placeholder{width:100%;height:190px;background:linear-gradient(135deg,#c6f6d5,#9ae6b4);
+  display:flex;align-items:center;justify-content:center;font-size:72px}
+.product-body{padding:14px 16px 18px}
+.product-name{font-size:19px;font-weight:700}
+.product-desc{font-size:13px;color:var(--gray);margin-top:4px}
+.product-footer{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px}
+.price-wrap{}
+.price-main{font-size:26px;font-weight:700;color:var(--red)}
+.price-unit{font-size:14px;color:var(--gray)}
+.price-desc{font-size:12px;color:var(--gray);margin-top:2px}
+.qty-ctrl{display:flex;align-items:center;gap:14px}
+.qty-btn{width:38px;height:38px;border-radius:50%;border:2px solid var(--green);background:#fff;
+  color:var(--green);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;line-height:1}
+.qty-btn:active{background:var(--green);color:#fff;transform:scale(.9)}
+.qty-btn.add{background:var(--green);color:#fff}
+.qty-num{font-size:20px;font-weight:600;min-width:28px;text-align:center}
+.unavailable-tag{color:var(--gray);font-size:14px;background:#f7fafc;padding:8px 12px;border-radius:8px}
+
+/* Cart FAB */
+.cart-fab{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#fff;border:none;border-radius:30px;
+  padding:14px 28px;font-size:16px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 24px rgba(56,161,105,.45);display:flex;align-items:center;gap:10px;
+  z-index:50;transition:transform .2s,box-shadow .2s;white-space:nowrap}
+.cart-fab:active{transform:translateX(-50%) scale(.95)}
+.cart-badge{background:var(--red);color:#fff;border-radius:12px;padding:2px 9px;font-size:13px;font-weight:700}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;background:#fff;border-top:1px solid var(--border);
+  display:flex;z-index:60;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 8px 8px;
+  cursor:pointer;border:none;background:none;color:var(--gray);font-size:11px;gap:3px;
+  font-family:inherit;transition:color .15s}
+.nav-btn.active{color:var(--green)}
+.nav-icon{font-size:22px;line-height:1}
+
+/* Pages */
+.page{display:block}.page.hidden{display:none}
+.page-header{background:linear-gradient(135deg,#38a169,#276749);color:#fff;padding:20px;
+  font-size:18px;font-weight:600}
+
+/* Input / Button */
+.input{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;
+  font-family:inherit;color:var(--text);outline:none;transition:border-color .2s;width:100%;background:#fff}
+.input:focus{border-color:var(--green)}
+textarea.input{resize:none;height:90px}
+.btn{border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-gray{background:#edf2f7;color:var(--gray)}
+.btn-full{width:100%;padding:15px;font-size:17px;border-radius:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Form group */
+.form-group{margin-bottom:16px}
+.form-label{font-size:14px;font-weight:600;margin-bottom:8px;display:block}
+.form-label .req{color:var(--red);margin-left:2px}
+.row{display:flex;gap:10px}
+
+/* Order cards */
+.order-list{padding:16px;display:flex;flex-direction:column;gap:12px}
+.order-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.order-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.order-num{font-size:12px;color:var(--gray)}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-pending{background:#fefcbf;color:#b7791f}
+.badge-paid{background:#c6f6d5;color:#276749}
+.badge-cancelled{background:#fed7d7;color:var(--red)}
+.order-items{font-size:14px;margin-bottom:8px}
+.order-row{display:flex;justify-content:space-between;padding:3px 0}
+.order-total{display:flex;justify-content:space-between;font-weight:600;
+  padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+.order-total-amt{color:var(--red);font-size:17px}
+.order-meta{font-size:12px;color:var(--gray);margin-top:8px}
+.order-actions{margin-top:12px;display:flex;gap:8px}
+
+/* Overlays */
+.ov-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);
+  z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.ov-backdrop.show{opacity:1;pointer-events:all}
+.ov-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);
+  padding-bottom:env(safe-area-inset-bottom)}
+.ov-backdrop.show .ov-sheet{transform:translateY(0)}
+.ov-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.ov-head{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--border)}
+.ov-title{font-size:17px;font-weight:600}
+.close-btn{background:none;border:none;font-size:22px;color:var(--gray);cursor:pointer;
+  padding:4px;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+
+/* Cart */
+.cart-items{padding:0 20px}
+.cart-item{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.cart-item-name{font-size:16px;font-weight:500}
+.cart-item-sub{font-size:13px;color:var(--gray);margin-top:2px}
+.cart-foot{padding:16px 20px;border-top:1px solid var(--border);background:#fafafa}
+.cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cart-total-amt{font-size:24px;font-weight:700;color:var(--red)}
+
+/* Checkout */
+.checkout-body{padding:20px}
+.summary-box{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:16px}
+.summary-row{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
+.summary-total{display:flex;justify-content:space-between;font-weight:600;
+  padding-top:10px;border-top:1px solid var(--border);margin-top:6px}
+.summary-total-amt{color:var(--red);font-size:18px}
+.policy-box{background:var(--yellow-bg);border:1px solid var(--yellow-border);
+  border-radius:10px;padding:12px 14px;font-size:13px;color:var(--orange);
+  margin-top:16px;line-height:1.7}
+
+/* Payment */
+.payment-body{padding:24px 20px;text-align:center}
+.payment-icon{width:68px;height:68px;background:var(--green-light);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px}
+.payment-title{font-size:20px;font-weight:700;color:var(--green-dark)}
+.payment-subtitle{font-size:13px;color:var(--gray);margin-top:6px}
+.payment-order-id{display:inline-block;background:#f7fafc;border-radius:8px;
+  padding:5px 14px;font-size:14px;color:var(--text);margin:12px 0 20px;font-weight:600}
+.instr-box{background:var(--bg);border-radius:12px;padding:16px;text-align:left;margin-bottom:16px}
+.instr-title{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--text)}
+.instr-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;
+  border-bottom:1px solid var(--border)}
+.instr-row:last-child{border-bottom:none}
+.instr-val{font-weight:600;color:var(--red)}
+.qr-box{width:180px;height:180px;margin:16px auto;border:2px dashed var(--border);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.qr-box img{width:100%;height:100%;object-fit:contain}
+.qr-placeholder{text-align:center;color:var(--gray);font-size:13px;padding:12px}
+.warn-box{font-size:13px;color:var(--gray);background:#f7fafc;border-radius:8px;
+  padding:10px 12px;line-height:1.7;margin-top:12px;text-align:left}
+
+/* Stars */
+.stars{display:flex;gap:10px;font-size:34px}
+.star{cursor:pointer;opacity:.25;transition:opacity .15s,transform .15s;user-select:none}
+.star.on{opacity:1}
+.star:active{transform:scale(1.2)}
+
+/* Misc */
+.empty{text-align:center;padding:48px 20px;color:var(--gray)}
+.empty-icon{font-size:52px;margin-bottom:12px}
+.loading{text-align:center;padding:40px;color:var(--gray)}
+.search-box{background:#fff;padding:16px;border-bottom:1px solid var(--border)}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.hidden{display:none!important}
+
+/* Toast */
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);
+  background:rgba(0,0,0,.75);color:#fff;padding:12px 24px;border-radius:30px;
+  font-size:15px;z-index:200;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+</style>
+</head>
+<body>
+
+<!-- HOME PAGE -->
+<div id="pg-home" class="page">
+  <div class="header">
+    <div class="header-title">🌿 自家菜地</div>
+    <div class="header-sub">新鲜蔬菜采摘 · 自取</div>
+  </div>
+  <div class="stats-bar">
+    <span>已有</span>
+    <span class="stats-num" id="stats-num">0</span>
+    <span>位邻居参与本次团购</span>
+  </div>
+  <div id="banner-harvest" class="banner harvest hidden">
+    <span class="dot"></span>
+    <span>正在采摘中，今日新鲜直送，当天可取货！</span>
+  </div>
+  <div id="banner-notice" class="banner notice hidden">
+    <span class="dot"></span>
+    <span id="banner-notice-text"></span>
+  </div>
+  <div id="banner-closed" class="banner closed hidden">
+    <span class="dot"></span>
+    <span>本期已截单，敬请关注下次团购通知 🥬</span>
+  </div>
+  <div id="products" class="products">
+    <div class="loading">加载中…</div>
+  </div>
+</div>
+
+<!-- ORDERS PAGE -->
+<div id="pg-orders" class="page hidden">
+  <div class="page-header">我的订单</div>
+  <div class="search-box">
+    <div class="row">
+      <input id="lookup-room" class="input" placeholder="输入您的房号查询（如：3栋2单元101）" style="flex:1">
+      <button class="btn btn-primary" onclick="lookupOrders()">查询</button>
+    </div>
+  </div>
+  <div id="order-results"></div>
+</div>
+
+<!-- FEEDBACK PAGE -->
+<div id="pg-feedback" class="page hidden">
+  <div class="page-header">留言 / 评价</div>
+  <div style="padding:16px">
+    <div class="form-group">
+      <label class="form-label">您的房号<span class="req">*</span></label>
+      <input id="fb-room" class="input" placeholder="如：3栋2单元101（卖家可通过此找到您）">
+      <div style="font-size:12px;color:var(--gray);margin-top:6px">填写房号后，卖家可通过房号联系到您</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">满意度</label>
+      <div class="stars" id="stars">
+        <span class="star on" data-v="1">⭐</span>
+        <span class="star on" data-v="2">⭐</span>
+        <span class="star on" data-v="3">⭐</span>
+        <span class="star on" data-v="4">⭐</span>
+        <span class="star on" data-v="5">⭐</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">评价内容<span class="req">*</span></label>
+      <textarea id="fb-content" class="input" placeholder="分享您的购买体验，帮助更多邻居了解…"></textarea>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="submitFeedback()">提交评价</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="navigate('home')">
+    <span class="nav-icon">🏠</span>
+    <span>首页</span>
+  </button>
+  <button class="nav-btn" id="nav-orders" onclick="navigate('orders')">
+    <span class="nav-icon">📦</span>
+    <span>我的订单</span>
+  </button>
+  <button class="nav-btn" id="nav-feedback" onclick="navigate('feedback')">
+    <span class="nav-icon">⭐</span>
+    <span>留言评价</span>
+  </button>
+</nav>
+
+<!-- CART FAB -->
+<button class="cart-fab hidden" id="cart-fab" onclick="showOverlay('ov-cart')">
+  <span>🛒 去结算</span>
+  <span class="cart-badge" id="cart-badge">0</span>
+  <span id="cart-total-fab" style="font-size:15px">¥0</span>
+</button>
+
+<!-- OVERLAY: CART -->
+<div class="ov-backdrop" id="ov-cart" onclick="handleBackdropClick(event,'ov-cart')">
+  <div class="ov-sheet">
+    <div class="ov-handle"></div>
+    <div class="ov-head">
+      <span class="ov-title">购物清单</span>
+      <button class="close-btn" onclick="hideOverlay('ov-cart')">✕</button>
+    </div>
+    <div class="cart-items" id="cart-items-list"></div>
+    <div class="cart-foot">
+      <div class="cart-total-row">
+        <span style="font-size:16px">合计</span>
+        <span class="cart-total-amt" id="cart-total-display">¥0</span>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="showOverlay('ov-checkout');hideOverlay('ov-cart')">去结算 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: CHECKOUT -->
+<div class="ov-backdrop" id="ov-checkout" onclick="handleBackdropClick(event,'ov-checkout')">
+  <div class="ov-sheet">
+    <div class="ov-handle"></div>
+    <div class="ov-head">
+      <button class="close-btn" onclick="showOverlay('ov-cart');hideOverlay('ov-checkout')" style="font-size:18px">← 返回</button>
+      <span class="ov-title">确认订单</span>
+      <div style="width:32px"></div>
+    </div>
+    <div class="checkout-body">
+      <div class="form-group">
+        <label class="form-label">您的房号<span class="req">*</span></label>
+        <input id="co-room" class="input" placeholder="如：3栋2单元101">
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注（选填）</label>
+        <input id="co-note" class="input" placeholder="如有特殊要求请备注">
+      </div>
+      <div class="summary-box">
+        <div id="co-summary-items"></div>
+        <div class="summary-total">
+          <span>合计</span>
+          <span class="summary-total-amt" id="co-total">¥0</span>
+        </div>
+      </div>
+      <div class="policy-box">
+        ⚠️ 下单须知：<br>
+        · 请在下单后及时完成转账，未付款订单不予保留<br>
+        · 采摘开始前可免费取消，采摘开始后不支持退款<br>
+        · 仅支持自取，当天采摘当天可取货
+      </div>
+      <div class="mt16">
+        <button class="btn btn-primary btn-full" id="submit-btn" onclick="submitOrder()">确认下单</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: PAYMENT -->
+<div class="ov-backdrop" id="ov-payment">
+  <div class="ov-sheet">
+    <div class="ov-handle"></div>
+    <div class="payment-body">
+      <div class="payment-icon">✅</div>
+      <div class="payment-title">订单已提交！</div>
+      <div class="payment-subtitle">请完成付款，采摘后通知取货</div>
+      <div class="payment-order-id">订单号：<span id="pay-order-id">-</span></div>
+      <div class="instr-box">
+        <div class="instr-title">💰 微信转账给卖家</div>
+        <div class="instr-row"><span>转账金额</span><span class="instr-val" id="pay-amount">¥0</span></div>
+        <div class="instr-row"><span>转账备注</span><span class="instr-val" id="pay-remark">房号</span></div>
+      </div>
+      <div id="qr-wrap">
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">扫码付款</div>
+        <div class="qr-box" id="qr-box">
+          <div class="qr-placeholder">
+            <div style="font-size:28px;margin-bottom:6px">📲</div>
+            <div>收款码设置后显示<br>（管理员在后台上传）</div>
+          </div>
+        </div>
+      </div>
+      <div class="warn-box">
+        付款后即视为下单成功，卖家确认后会在群里通知取货时间。<br>
+        如需取消请在采摘前到「我的订单」页面操作。
+      </div>
+      <div class="mt16">
+        <button class="btn btn-primary btn-full" onclick="afterPayment()">我已付款，查看订单</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────
+let state = {
+  products: [],
+  config: {},
+  cart: {},       // { productId: quantity }
+  currentPage: 'home',
+  rating: 5,
+  lastRoom: '',
+  lastOrderId: ''
+};
+
+// ── API ────────────────────────────────────────
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    return await r.json();
+  } catch (e) {
+    return { error: '网络错误，请稍后重试' };
+  }
+}
+
+// ── Init ───────────────────────────────────────
+async function init() {
+  const [products, config, stats] = await Promise.all([
+    api('/api/products'),
+    api('/api/config'),
+    api('/api/stats')
+  ]);
+  state.products = Array.isArray(products) ? products : [];
+  state.config = config || {};
+  renderProducts();
+  renderBanners();
+  updateStats(stats.participants || 0);
+  renderQR();
+}
+
+function updateStats(n) {
+  const el = document.getElementById('stats-num');
+  if (n === 0) { el.textContent = '0'; return; }
+  let cur = 0;
+  const step = Math.ceil(n / 20);
+  const t = setInterval(() => {
+    cur = Math.min(cur + step, n);
+    el.textContent = cur;
+    if (cur >= n) clearInterval(t);
+  }, 50);
+}
+
+function renderBanners() {
+  const c = state.config;
+  document.getElementById('banner-harvest').classList.toggle('hidden', !c.harvestStarted);
+  const noticeEl = document.getElementById('banner-notice');
+  if (c.announcement) {
+    document.getElementById('banner-notice-text').textContent = c.announcement;
+    noticeEl.classList.remove('hidden');
+  } else {
+    noticeEl.classList.add('hidden');
+  }
+  document.getElementById('banner-closed').classList.toggle('hidden', c.shopOpen !== false);
+}
+
+function renderQR() {
+  const url = state.config.qrCodeUrl;
+  const box = document.getElementById('qr-box');
+  if (url) {
+    box.innerHTML = `<img src="${url}" alt="微信收款码">`;
+  }
+}
+
+// ── Products ───────────────────────────────────
+function renderProducts() {
+  const el = document.getElementById('products');
+  const isClosed = state.config.shopOpen === false;
+  if (!state.products.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🌱</div><div>暂无商品，敬请期待</div></div>';
+    return;
+  }
+  el.innerHTML = state.products.map(p => productCard(p, isClosed)).join('');
+}
+
+function productCard(p, shopClosed) {
+  const qty = state.cart[p.id] || 0;
+  const img = p.image
+    ? `<img class="product-img" src="${p.image}" alt="${p.name}">`
+    : `<div class="product-img-placeholder">🥬</div>`;
+  const unavail = !p.available || shopClosed;
+  const ctrl = unavail
+    ? `<div class="unavailable-tag">${shopClosed ? '本期已截单' : '暂时缺货'}</div>`
+    : qty === 0
+    ? `<div class="qty-ctrl"><button class="qty-btn add" onclick="addToCart('${p.id}')">+</button></div>`
+    : `<div class="qty-ctrl">
+        <button class="qty-btn" onclick="adjustCart('${p.id}',-1)">−</button>
+        <span class="qty-num">${qty}</span>
+        <button class="qty-btn add" onclick="adjustCart('${p.id}',1)">+</button>
+       </div>`;
+  return `
+    <div class="product-card">
+      ${img}
+      <div class="product-body">
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.description || ''}</div>
+        <div class="product-footer">
+          <div class="price-wrap">
+            <div><span class="price-main">¥${p.price}</span><span class="price-unit"> / ${p.unit}</span></div>
+            <div class="price-desc">${p.unitDesc}</div>
+          </div>
+          ${ctrl}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Cart ───────────────────────────────────────
+function addToCart(id) {
+  state.cart[id] = 1;
+  refreshCartUI();
+  renderProducts();
+}
+
+function adjustCart(id, delta) {
+  const n = (state.cart[id] || 0) + delta;
+  if (n <= 0) delete state.cart[id];
+  else state.cart[id] = n;
+  refreshCartUI();
+  renderProducts();
+}
+
+function cartItems() {
+  return Object.entries(state.cart).map(([id, qty]) => {
+    const p = state.products.find(x => x.id === id);
+    if (!p) return null;
+    return { productId: id, name: p.name, unit: p.unit, unitDesc: p.unitDesc,
+             quantity: qty, unitPrice: p.price, subtotal: qty * p.price };
+  }).filter(Boolean);
+}
+
+function cartTotal() {
+  return cartItems().reduce((s, i) => s + i.subtotal, 0);
+}
+
+function refreshCartUI() {
+  const items = cartItems();
+  const total = cartTotal();
+  const count = items.reduce((s, i) => s + i.quantity, 0);
+  const fab = document.getElementById('cart-fab');
+  fab.classList.toggle('hidden', count === 0);
+  document.getElementById('cart-badge').textContent = count;
+  document.getElementById('cart-total-fab').textContent = `¥${total}`;
+
+  // Cart overlay list
+  const listEl = document.getElementById('cart-items-list');
+  if (listEl) {
+    listEl.innerHTML = items.length ? items.map(i => `
+      <div class="cart-item">
+        <div>
+          <div class="cart-item-name">${i.name}</div>
+          <div class="cart-item-sub">¥${i.unitPrice} × ${i.quantity}${i.unit}</div>
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="adjustCart('${i.productId}',-1)">−</button>
+          <span class="qty-num">${i.quantity}</span>
+          <button class="qty-btn add" onclick="adjustCart('${i.productId}',1)">+</button>
+        </div>
+      </div>`).join('') : '<div class="empty" style="padding:30px">购物车是空的</div>';
+  }
+  document.getElementById('cart-total-display').textContent = `¥${total}`;
+
+  // Checkout summary
+  const sumEl = document.getElementById('co-summary-items');
+  if (sumEl) {
+    sumEl.innerHTML = items.map(i =>
+      `<div class="summary-row"><span>${i.name} × ${i.quantity}${i.unit}</span><span>¥${i.subtotal}</span></div>`
+    ).join('');
+  }
+  document.getElementById('co-total').textContent = `¥${total}`;
+}
+
+// ── Order Submit ───────────────────────────────
+async function submitOrder() {
+  const room = document.getElementById('co-room').value.trim();
+  const note = document.getElementById('co-note').value.trim();
+  if (!room) { toast('请填写您的房号'); return; }
+  const items = cartItems();
+  if (!items.length) { toast('购物车是空的'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '提交中…';
+
+  const res = await api('/api/orders', {
+    method: 'POST',
+    body: JSON.stringify({ room, items, total: cartTotal(), note })
+  });
+
+  btn.disabled = false; btn.textContent = '确认下单';
+
+  if (res.error) { toast(res.error); return; }
+
+  state.lastRoom = room;
+  state.lastOrderId = res.orderId;
+  document.getElementById('pay-order-id').textContent = res.orderId;
+  document.getElementById('pay-amount').textContent = `¥${cartTotal()}`;
+  document.getElementById('pay-remark').textContent = `${room} + 品种`;
+
+  // Clear cart
+  state.cart = {};
+  refreshCartUI();
+  renderProducts();
+
+  hideOverlay('ov-checkout');
+  showOverlay('ov-payment');
+
+  // Refresh stats
+  api('/api/stats').then(s => updateStats(s.participants || 0));
+}
+
+function afterPayment() {
+  hideOverlay('ov-payment');
+  navigate('orders');
+  document.getElementById('lookup-room').value = state.lastRoom;
+  lookupOrders();
+}
+
+// ── Orders Lookup ──────────────────────────────
+async function lookupOrders() {
+  const room = document.getElementById('lookup-room').value.trim();
+  if (!room) { toast('请输入房号'); return; }
+  const el = document.getElementById('order-results');
+  el.innerHTML = '<div class="loading">查询中…</div>';
+  const orders = await api(`/api/orders?room=${encodeURIComponent(room)}`);
+  if (!Array.isArray(orders) || !orders.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>暂无订单</div><div style="margin-top:8px;font-size:13px">请确认房号是否正确</div></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="order-list">${orders.reverse().map(orderCard).join('')}</div>`;
+}
+
+function orderCard(o) {
+  const statusMap = { pending:'badge-pending', paid:'badge-paid', cancelled:'badge-cancelled' };
+  const statusText = { pending:'待付款', paid:'已付款', cancelled:'已取消' };
+  const canCancel = o.status === 'pending' && !state.config.harvestStarted;
+  const date = new Date(o.createdAt).toLocaleString('zh-CN', { month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit' });
+  return `
+    <div class="order-card">
+      <div class="order-top">
+        <span class="order-num">订单号：${o.id}</span>
+        <span class="badge ${statusMap[o.status]}">${statusText[o.status]}</span>
+      </div>
+      <div class="order-items">
+        ${o.items.map(i=>`<div class="order-row"><span>${i.name} × ${i.quantity}${i.unit}</span><span>¥${i.subtotal}</span></div>`).join('')}
+      </div>
+      <div class="order-total">
+        <span>合计</span>
+        <span class="order-total-amt">¥${o.total}</span>
+      </div>
+      ${o.note ? `<div class="order-meta">备注：${o.note}</div>` : ''}
+      <div class="order-meta">${date}</div>
+      ${canCancel ? `<div class="order-actions"><button class="btn btn-danger" style="font-size:14px;padding:9px 16px" onclick="cancelOrder('${o.id}')">取消订单</button></div>` : ''}
+      ${o.status==='pending' ? `<div style="margin-top:10px;font-size:13px;color:var(--orange)">⏳ 请完成付款，转账备注您的房号</div>` : ''}
+    </div>`;
+}
+
+async function cancelOrder(id) {
+  if (!confirm('确定要取消这笔订单吗？')) return;
+  const res = await api('/api/orders', {
+    method: 'PUT',
+    body: JSON.stringify({ id, status: 'cancelled' })
+  });
+  if (res.error) { toast(res.error); return; }
+  toast('订单已取消');
+  lookupOrders();
+}
+
+// ── Feedback ───────────────────────────────────
+let fbRating = 5;
+document.querySelectorAll('.star').forEach(s => {
+  s.addEventListener('click', () => {
+    fbRating = parseInt(s.dataset.v);
+    document.querySelectorAll('.star').forEach((x, i) => x.classList.toggle('on', i < fbRating));
+  });
+});
+
+async function submitFeedback() {
+  const room = document.getElementById('fb-room').value.trim();
+  const content = document.getElementById('fb-content').value.trim();
+  if (!room) { toast('请填写您的房号'); return; }
+  if (!content) { toast('请填写评价内容'); return; }
+  const res = await api('/api/feedback', {
+    method: 'POST',
+    body: JSON.stringify({ room, content, rating: fbRating })
+  });
+  if (res.error) { toast(res.error); return; }
+  document.getElementById('fb-room').value = '';
+  document.getElementById('fb-content').value = '';
+  toast('感谢您的评价！🎉');
+}
+
+// ── Navigation ─────────────────────────────────
+function navigate(page) {
+  ['home','orders','feedback'].forEach(p => {
+    document.getElementById(`pg-${p}`).classList.toggle('hidden', p !== page);
+    document.getElementById(`nav-${p}`).classList.toggle('active', p === page);
+  });
+  state.currentPage = page;
+}
+
+// ── Overlays ───────────────────────────────────
+function showOverlay(id) {
+  document.getElementById(id).classList.add('show');
+  if (id === 'ov-cart') refreshCartUI();
+  if (id === 'ov-checkout') refreshCartUI();
+}
+function hideOverlay(id) {
+  document.getElementById(id).classList.remove('show');
+}
+function handleBackdropClick(e, id) {
+  if (e.target === document.getElementById(id)) hideOverlay(id);
+}
+
+// ── Toast ──────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Start ──────────────────────────────────────
+init();
+</script>
+</body>
+</html>

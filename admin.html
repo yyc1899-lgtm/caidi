@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>管理后台 - 自家菜地</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --green:#38a169;--green-dark:#276749;--green-light:#c6f6d5;
+  --red:#e53e3e;--orange:#dd6b20;
+  --bg:#f0f4f2;--card:#fff;--text:#1a202c;--gray:#718096;--border:#e2e8f0;
+  --radius:14px;--shadow:0 2px 12px rgba(0,0,0,.08);
+}
+html,body{height:100%;background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  color:var(--text);font-size:15px;max-width:480px;margin:0 auto;-webkit-font-smoothing:antialiased}
+
+/* Login */
+#login-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:32px 24px;background:linear-gradient(160deg,#e8f5ee,#f0f4f2)}
+.login-logo{font-size:56px;margin-bottom:16px}
+.login-title{font-size:22px;font-weight:700;color:var(--green-dark);margin-bottom:6px}
+.login-sub{font-size:14px;color:var(--gray);margin-bottom:32px}
+.login-box{background:#fff;border-radius:16px;padding:24px;width:100%;box-shadow:var(--shadow)}
+
+/* Dashboard */
+#dashboard{display:none;padding-bottom:80px}
+.admin-header{background:linear-gradient(135deg,#38a169,#276749);color:#fff;
+  padding:18px 20px;display:flex;align-items:center;justify-content:space-between}
+.admin-header-title{font-size:17px;font-weight:600}
+.logout-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;
+  padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+
+/* Tabs */
+.tab-bar{background:#fff;display:flex;border-bottom:2px solid var(--border);
+  position:sticky;top:0;z-index:10}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:13px;font-weight:500;
+  color:var(--gray);cursor:pointer;border:none;background:none;font-family:inherit;
+  transition:color .15s;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:600}
+
+.tab-panel{display:none;padding:16px}
+.tab-panel.active{display:block}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow);margin-bottom:12px}
+
+/* Inputs / Buttons */
+.input{border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:15px;
+  font-family:inherit;color:var(--text);outline:none;transition:border-color .2s;width:100%;background:#fff}
+.input:focus{border-color:var(--green)}
+textarea.input{resize:none;height:80px}
+.btn{border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-gray{background:#edf2f7;color:var(--gray)}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-full{width:100%;padding:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.row{display:flex;gap:10px}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;font-weight:600;margin-bottom:7px;display:block;color:var(--gray)}
+
+/* Toggle switch */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;
+  border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info{}
+.toggle-name{font-size:15px;font-weight:600}
+.toggle-desc{font-size:12px;color:var(--gray);margin-top:3px}
+.toggle{position:relative;width:52px;height:28px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;
+  border-radius:28px;cursor:pointer;transition:background .3s}
+.toggle-slider:before{content:'';position:absolute;width:22px;height:22px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle input:checked + .toggle-slider{background:var(--green)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(24px)}
+
+/* Order filter */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-btn{padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;
+  border:1.5px solid var(--border);background:#fff;color:var(--gray);cursor:pointer;font-family:inherit}
+.filter-btn.active{border-color:var(--green);background:var(--green);color:#fff}
+
+/* Order card (admin) */
+.a-order-card{background:var(--card);border-radius:var(--radius);padding:14px;
+  box-shadow:var(--shadow);margin-bottom:10px}
+.a-order-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.a-room{font-size:17px;font-weight:700;color:var(--green-dark)}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-pending{background:#fefcbf;color:#b7791f}
+.badge-paid{background:#c6f6d5;color:#276749}
+.badge-cancelled{background:#fed7d7;color:var(--red)}
+.a-items{font-size:14px;color:var(--gray);margin-bottom:8px}
+.a-total{font-size:16px;font-weight:700;color:var(--red)}
+.a-meta{font-size:12px;color:var(--gray)}
+.a-actions{display:flex;gap:8px;margin-top:10px}
+.a-actions .btn{font-size:13px;padding:8px 14px}
+
+/* Products edit */
+.prod-card{background:var(--card);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow);margin-bottom:12px}
+.prod-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.prod-header-left{display:flex;align-items:center;gap:12px}
+.prod-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#c6f6d5,#9ae6b4);
+  display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.prod-icon img{width:100%;height:100%;object-fit:cover}
+.prod-header-name{font-size:16px;font-weight:600}
+.prod-header-price{font-size:13px;color:var(--gray)}
+.available-tag{font-size:12px;padding:3px 10px;border-radius:12px;font-weight:600}
+.available-tag.yes{background:var(--green-light);color:var(--green-dark)}
+.available-tag.no{background:#fed7d7;color:var(--red)}
+
+/* Feedback */
+.fb-card{background:var(--card);border-radius:var(--radius);padding:14px;
+  box-shadow:var(--shadow);margin-bottom:10px}
+.fb-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.fb-room{font-size:15px;font-weight:700;color:var(--green-dark)}
+.fb-stars{color:#f6c90e;font-size:16px}
+.fb-content{font-size:14px;color:var(--text);line-height:1.6}
+.fb-time{font-size:12px;color:var(--gray);margin-top:6px}
+
+/* Summary strip */
+.summary-strip{display:flex;gap:10px;margin-bottom:14px}
+.strip-item{flex:1;background:var(--card);border-radius:10px;padding:12px;
+  text-align:center;box-shadow:var(--shadow)}
+.strip-num{font-size:22px;font-weight:700}
+.strip-label{font-size:11px;color:var(--gray);margin-top:2px}
+.strip-item.green .strip-num{color:var(--green)}
+.strip-item.orange .strip-num{color:var(--orange)}
+.strip-item.red .strip-num{color:var(--red)}
+
+.empty{text-align:center;padding:36px 20px;color:var(--gray)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.loading{text-align:center;padding:36px;color:var(--gray)}
+.section-title{font-size:13px;font-weight:600;color:var(--gray);margin-bottom:10px;text-transform:uppercase}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.hidden{display:none!important}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+
+/* Toast */
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);
+  background:rgba(0,0,0,.75);color:#fff;padding:12px 24px;border-radius:30px;
+  font-size:15px;z-index:200;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-page">
+  <div class="login-logo">🌿</div>
+  <div class="login-title">自家菜地管理后台</div>
+  <div class="login-sub">请输入管理员密码</div>
+  <div class="login-box">
+    <div class="form-group">
+      <input id="pw-input" class="input" type="password" placeholder="管理员密码"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary btn-full mt8" onclick="doLogin()">登录</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="admin-header">
+    <span class="admin-header-title">🌿 管理后台</span>
+    <button class="logout-btn" onclick="logout()">退出</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('orders')">📦 订单</button>
+    <button class="tab" onclick="switchTab('products')">🥬 商品</button>
+    <button class="tab" onclick="switchTab('settings')">⚙️ 设置</button>
+    <button class="tab" onclick="switchTab('feedback')">💬 留言</button>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div class="tab-panel active" id="tab-orders">
+    <div class="summary-strip" id="orders-summary"></div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-f="all" onclick="filterOrders('all',this)">全部</button>
+      <button class="filter-btn" data-f="pending" onclick="filterOrders('pending',this)">待付款</button>
+      <button class="filter-btn" data-f="paid" onclick="filterOrders('paid',this)">已付款</button>
+      <button class="filter-btn" data-f="cancelled" onclick="filterOrders('cancelled',this)">已取消</button>
+    </div>
+    <div id="orders-list"><div class="loading">加载中…</div></div>
+  </div>
+
+  <!-- PRODUCTS TAB -->
+  <div class="tab-panel" id="tab-products">
+    <div id="products-list"><div class="loading">加载中…</div></div>
+    <button class="btn btn-primary btn-full" onclick="saveProducts()">💾 保存商品信息</button>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div class="tab-panel" id="tab-settings">
+    <div class="card">
+      <div class="section-title">营业状态</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">接受下单</div>
+          <div class="toggle-desc">关闭后客户无法提交新订单</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="tg-open" onchange="saveConfig()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">正在采摘</div>
+          <div class="toggle-desc">开启后订单锁定，客户无法取消；首页显示采摘中横幅</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="tg-harvest" onchange="saveConfig()"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="card mt8">
+      <div class="section-title">今日公告</div>
+      <textarea id="cfg-announcement" class="input" placeholder="如：今天下午3点开始采摘，晚上6点后可取货，有需要请联系我～（留空则不显示）"></textarea>
+      <button class="btn btn-primary mt8" onclick="saveConfig()">保存公告</button>
+    </div>
+    <div class="card mt8">
+      <div class="section-title">微信收款码</div>
+      <div class="form-group">
+        <label class="form-label">图片链接（粘贴图片URL）</label>
+        <input id="cfg-qr" class="input" placeholder="https://... 将图片上传后粘贴链接">
+      </div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.6">
+        推荐：将收款码截图上传至 <strong>微博图床</strong> 或 <strong>路过图床(imgse.com)</strong>，复制图片链接粘贴到此处
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()">保存收款码</button>
+    </div>
+    <div class="card mt8">
+      <div class="section-title" style="color:var(--red)">危险操作</div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:12px;line-height:1.6">
+        每期团购结束后，可以清空本期所有订单，方便下期重新开始。
+      </div>
+      <button class="btn btn-danger btn-full" onclick="clearOrders()">🗑️ 清空本期所有订单</button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK TAB -->
+  <div class="tab-panel" id="tab-feedback">
+    <div id="feedback-list"><div class="loading">加载中…</div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let adminPw = '';
+let allOrders = [];
+let allProducts = [];
+let currentFilter = 'all';
+
+// ── Auth ───────────────────────────────────────
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value.trim();
+  if (!pw) { toast('请输入密码'); return; }
+  const res = await api('/api/orders?password=' + encodeURIComponent(pw));
+  if (res.error) { toast('密码错误'); return; }
+  adminPw = pw;
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadAll();
+}
+
+function logout() {
+  adminPw = '';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+}
+
+// ── API ────────────────────────────────────────
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    return await r.json();
+  } catch (e) { return { error: '网络错误' }; }
+}
+
+// ── Load All ───────────────────────────────────
+async function loadAll() {
+  const [orders, products, config, feedbacks] = await Promise.all([
+    api(`/api/orders?password=${encodeURIComponent(adminPw)}`),
+    api('/api/products'),
+    api('/api/config'),
+    api(`/api/feedback?password=${encodeURIComponent(adminPw)}`)
+  ]);
+  allOrders = Array.isArray(orders) ? orders : [];
+  allProducts = Array.isArray(products) ? products : [];
+  renderOrders();
+  renderProducts();
+  renderSettings(config || {});
+  renderFeedback(Array.isArray(feedbacks) ? feedbacks : []);
+}
+
+// ── Orders ─────────────────────────────────────
+function renderOrders() {
+  const active = allOrders.filter(o => o.status !== 'cancelled');
+  const paid = active.filter(o => o.status === 'paid');
+  const pending = active.filter(o => o.status === 'pending');
+  const totalAmt = active.reduce((s, o) => s + o.total, 0);
+
+  document.getElementById('orders-summary').innerHTML = `
+    <div class="strip-item green"><div class="strip-num">${active.length}</div><div class="strip-label">有效订单</div></div>
+    <div class="strip-item orange"><div class="strip-num">${pending.length}</div><div class="strip-label">待付款</div></div>
+    <div class="strip-item red"><div class="strip-num">¥${totalAmt}</div><div class="strip-label">总金额</div></div>
+  `;
+
+  let filtered = allOrders;
+  if (currentFilter !== 'all') filtered = allOrders.filter(o => o.status === currentFilter);
+  filtered = [...filtered].reverse();
+
+  if (!filtered.length) {
+    document.getElementById('orders-list').innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>暂无订单</div></div>`;
+    return;
+  }
+  document.getElementById('orders-list').innerHTML = filtered.map(adminOrderCard).join('');
+}
+
+function adminOrderCard(o) {
+  const statusText = { pending:'待付款', paid:'已付款', cancelled:'已取消' };
+  const badgeCls = { pending:'badge-pending', paid:'badge-paid', cancelled:'badge-cancelled' };
+  const date = new Date(o.createdAt).toLocaleString('zh-CN', { month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit' });
+  const actionsHtml = o.status === 'cancelled' ? '' : `
+    <div class="a-actions">
+      ${o.status === 'pending' ? `<button class="btn btn-primary" onclick="markPaid('${o.id}')">✅ 标记已付款</button>` : ''}
+      ${o.status === 'paid' ? `<button class="btn btn-gray" onclick="markStatus('${o.id}','pending')">↩ 撤回付款</button>` : ''}
+      <button class="btn btn-danger" onclick="adminCancel('${o.id}')">取消</button>
+    </div>`;
+  return `
+    <div class="a-order-card">
+      <div class="a-order-top">
+        <div class="a-room">🏠 ${o.room}</div>
+        <span class="badge ${badgeCls[o.status]}">${statusText[o.status]}</span>
+      </div>
+      <div class="a-items">${o.items.map(i=>`${i.name} × ${i.quantity}${i.unit}`).join('，')}</div>
+      <div class="a-total">¥${o.total} ${o.note ? `<span style="font-size:13px;color:var(--gray);font-weight:400">· ${o.note}</span>` : ''}</div>
+      <div class="a-meta">订单号 ${o.id} · ${date}</div>
+      ${actionsHtml}
+    </div>`;
+}
+
+async function markPaid(id) {
+  const res = await api('/api/orders', { method:'PUT',
+    body: JSON.stringify({ id, status:'paid', password: adminPw }) });
+  if (res.error) { toast(res.error); return; }
+  allOrders.find(o => o.id === id).status = 'paid';
+  toast('已标记为已付款 ✅');
+  renderOrders();
+}
+
+async function markStatus(id, status) {
+  const res = await api('/api/orders', { method:'PUT',
+    body: JSON.stringify({ id, status, password: adminPw }) });
+  if (res.error) { toast(res.error); return; }
+  allOrders.find(o => o.id === id).status = status;
+  renderOrders();
+}
+
+async function adminCancel(id) {
+  if (!confirm('确定取消这笔订单吗？')) return;
+  await markStatus(id, 'cancelled');
+  toast('订单已取消');
+}
+
+function filterOrders(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+}
+
+// ── Products ───────────────────────────────────
+function renderProducts() {
+  document.getElementById('products-list').innerHTML =
+    allProducts.map((p, i) => productEditCard(p, i)).join('');
+}
+
+function productEditCard(p, i) {
+  const icon = p.image
+    ? `<div class="prod-icon"><img src="${p.image}" alt=""></div>`
+    : `<div class="prod-icon">🥬</div>`;
+  return `
+    <div class="prod-card">
+      <div class="prod-header">
+        <div class="prod-header-left">
+          ${icon}
+          <div>
+            <div class="prod-header-name">${p.name}</div>
+            <div class="prod-header-price">¥${p.price}/${p.unit} · ${p.unitDesc}</div>
+          </div>
+        </div>
+        <span class="available-tag ${p.available ? 'yes' : 'no'}">${p.available ? '上架中' : '已下架'}</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">商品名称</label>
+        <input class="input" id="p${i}-name" value="${p.name}">
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">单价（元）</label>
+          <input class="input" id="p${i}-price" type="number" value="${p.price}">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">单位（份/斤…）</label>
+          <input class="input" id="p${i}-unit" value="${p.unit}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">规格说明（如：5斤/份）</label>
+        <input class="input" id="p${i}-unitDesc" value="${p.unitDesc}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">商品描述</label>
+        <input class="input" id="p${i}-desc" value="${p.description || ''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">商品图片（粘贴图片URL）</label>
+        <input class="input" id="p${i}-img" value="${p.image || ''}" placeholder="https://...">
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn ${p.available ? 'btn-gray' : 'btn-primary'}" onclick="toggleAvail(${i})">
+          ${p.available ? '下架商品' : '上架商品'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function toggleAvail(i) {
+  allProducts[i].available = !allProducts[i].available;
+  renderProducts();
+  toast(allProducts[i].available ? '已上架' : '已下架，记得保存');
+}
+
+async function saveProducts() {
+  // Collect values from inputs
+  allProducts = allProducts.map((p, i) => ({
+    ...p,
+    name: document.getElementById(`p${i}-name`).value.trim() || p.name,
+    price: parseFloat(document.getElementById(`p${i}-price`).value) || p.price,
+    unit: document.getElementById(`p${i}-unit`).value.trim() || p.unit,
+    unitDesc: document.getElementById(`p${i}-unitDesc`).value.trim() || p.unitDesc,
+    description: document.getElementById(`p${i}-desc`).value.trim(),
+    image: document.getElementById(`p${i}-img`).value.trim()
+  }));
+  const res = await api('/api/products', { method:'PUT',
+    body: JSON.stringify({ password: adminPw, products: allProducts }) });
+  if (res.error) { toast(res.error); return; }
+  toast('商品信息已保存 ✅');
+  renderProducts();
+}
+
+// ── Settings ───────────────────────────────────
+function renderSettings(config) {
+  document.getElementById('tg-open').checked = config.shopOpen !== false;
+  document.getElementById('tg-harvest').checked = !!config.harvestStarted;
+  document.getElementById('cfg-announcement').value = config.announcement || '';
+  document.getElementById('cfg-qr').value = config.qrCodeUrl || '';
+}
+
+async function saveConfig() {
+  const config = {
+    shopOpen: document.getElementById('tg-open').checked,
+    harvestStarted: document.getElementById('tg-harvest').checked,
+    announcement: document.getElementById('cfg-announcement').value.trim(),
+    qrCodeUrl: document.getElementById('cfg-qr').value.trim()
+  };
+  const res = await api('/api/config', { method:'PUT',
+    body: JSON.stringify({ password: adminPw, ...config }) });
+  if (res.error) { toast(res.error); return; }
+  toast('设置已保存 ✅');
+}
+
+async function clearOrders() {
+  if (!confirm('确定要清空本期所有订单吗？此操作无法撤回！')) return;
+  if (!confirm('再次确认：清空后所有订单数据将永久删除，确定吗？')) return;
+  const res = await api('/api/orders', { method:'DELETE',
+    body: JSON.stringify({ password: adminPw }) });
+  if (res.error) { toast(res.error); return; }
+  allOrders = [];
+  renderOrders();
+  toast('已清空所有订单');
+}
+
+// ── Feedback ───────────────────────────────────
+function renderFeedback(feedbacks) {
+  if (!feedbacks.length) {
+    document.getElementById('feedback-list').innerHTML = `<div class="empty"><div class="empty-icon">💬</div><div>暂无留言</div></div>`;
+    return;
+  }
+  document.getElementById('feedback-list').innerHTML =
+    [...feedbacks].reverse().map(f => {
+      const stars = '⭐'.repeat(f.rating);
+      const date = new Date(f.createdAt).toLocaleString('zh-CN', { month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit' });
+      return `
+        <div class="fb-card">
+          <div class="fb-top">
+            <span class="fb-room">🏠 ${f.room}</span>
+            <span class="fb-stars">${stars}</span>
+          </div>
+          <div class="fb-content">${f.content}</div>
+          <div class="fb-time">${date}</div>
+        </div>`;
+    }).join('');
+}
+
+// ── Tabs ───────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Toast ──────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
